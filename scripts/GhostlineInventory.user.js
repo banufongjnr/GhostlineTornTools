@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Ghostline Inventory
 // @namespace    ghostline.torntools.inventory
-// @version      0.1.2
+// @version      0.1.4
 // @description  Ghostline-themed Torn inventory overlay with search, filtering, inspection and native item actions.
 // @author       FatherOooogaboo [3269781]
 // @match        https://www.torn.com/*
 // @match        https://torn.com/*
 // @grant        none
-// @run-at       document-idle
+// @run-at       document-end
 // ==/UserScript==
 
 (function () {
@@ -21,7 +21,17 @@
   }
   function start() {
   const C = { bg:'#05060c', teal:'#4fe0d0', vio:'#9b6bff', muted:'#7d8399' };
-  console.info('[Ghostline Inventory] v0.1.2 injected',location.href);
+  console.info('[Ghostline Inventory] v0.1.4 injected',location.href);
+  // The launcher is mounted before the complex UI, with inline styles as a fallback.
+  var bootLauncher = document.createElement('button');
+  bootLauncher.id = 'gi-boot-launcher';
+  bootLauncher.type = 'button';
+  bootLauncher.textContent = 'GHOSTLINE INVENTORY 0.1.4';
+  bootLauncher.style.cssText = 'position:fixed!important;top:105px!important;right:8px!important;z-index:2147483647!important;background:#4fe0d0!important;color:#05060c!important;border:2px solid #9b6bff!important;border-radius:12px!important;padding:12px!important;font:bold 12px system-ui!important;box-shadow:0 0 18px #9b6bff!important;display:block!important;visibility:visible!important;opacity:1!important;';
+  document.body.appendChild(bootLauncher);
+  bootLauncher.addEventListener('click', function () {
+    try { openOverlay(); } catch (error) { alert('Ghostline UI error: ' + error.message); console.error(error); }
+  });
   const css = `
     #gi-tab,#gi-root{font-family:Inter,"Space Grotesk",system-ui,sans-serif;box-sizing:border-box;color:#d7dbe8}
     #gi-root *{box-sizing:border-box}
@@ -172,11 +182,12 @@
     root.appendChild(foot);
     root.appendChild(button('RETURN TO TORN INVENTORY',close));
   }
-  function openOverlay(){open=true;root.classList.add('gi-open');document.documentElement.style.overflow='hidden';scan();render()}
-  function close(){open=false;root.classList.remove('gi-open');document.documentElement.style.overflow=''}
+  function openOverlay(){open=true;root.classList.add('gi-open');root.style.display='flex';document.documentElement.style.overflow='hidden';scan();render()}
+  function close(){open=false;root.classList.remove('gi-open');root.style.display='none';document.documentElement.style.overflow=''}
   tab.addEventListener('click',openOverlay);
-  tab.title='Ghostline Inventory v0.1.2';
-  const badge=el('div','','GI 0.1.2 ACTIVE');
+  root.style.display='none';
+  tab.title='Ghostline Inventory v0.1.4';
+  const badge=el('div','','GI 0.1.4 ACTIVE');
   badge.id='gi-injection-check';
   badge.style.cssText='position:fixed;top:calc(env(safe-area-inset-top) + 8px);left:8px;z-index:2147483646;background:#4fe0d0;color:#05060c;padding:6px 10px;border-radius:9px;font:700 11px system-ui;box-shadow:0 2px 16px #0008;cursor:pointer';
   badge.title='Ghostline Inventory injection confirmed — tap to open';
