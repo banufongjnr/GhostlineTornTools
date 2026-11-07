@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ghostline Inventory
 // @namespace    ghostline.torntools.inventory
-// @version      0.3.1
+// @version      0.3.2
 // @description  Compact in-place Torn inventory styling with a secondary Ghostline quick-info row.
 // @author       FatherOooogaboo [3269781]
 // @match        https://www.torn.com/item.php*
@@ -12,8 +12,8 @@
 
 (function () {
   'use strict';
-  if (window.__ghostlineInventory031) return;
-  window.__ghostlineInventory031 = true;
+  if (window.__ghostlineInventory032) return;
+  window.__ghostlineInventory032 = true;
   var enabled = true, scheduled = false, observing = false;
   var obs, currentRoot = null;
   function el(tag, cls, text) {
@@ -59,15 +59,22 @@
     }
     return null;
   }
+  function actionVerb(n) {
+    // Torn often puts the item name inside accessible action labels.
+    // Extract only the actual action, never the item name.
+    var s = label(n);
+    var m = s.match(/\b(unequip|equip|send|trash|sell|use|open|activate|consume|wear|remove)\b/i);
+    return m ? m[1].toUpperCase() : '';
+  }
   function nativeActions(row) {
     var all = Array.prototype.slice.call(row.querySelectorAll('button,a,[role="button"]'));
     var seen = {};
     return all.filter(function(n) {
       if (n.closest('.gi-secondary')) return false;
       var s = label(n);
-      if (!s || s.length > 70 || /^(show info|show options|show group)/i.test(s)) return false;
-      if (!/\b(use|equip|unequip|send|trash|sell|open|activate|consume|wear|remove)\b/i.test(s)) return false;
-      var key = s.toLowerCase().replace(/\s+/g,' ');
+      if (!s || /^(show info|show options|show group)/i.test(s)) return false;
+      var key = actionVerb(n);
+      if (!key) return false;
       if (seen[key]) return false;
       seen[key] = true;
       return true;
@@ -86,15 +93,14 @@
     var strip = el('div','gi-secondary');
     var left = el('span','gi-meta');
     var price = getPrice(row), quantity = getQuantity(row);
-    left.textContent = price ? 'VALUE  ' + price : 'ITEM DETAILS';
+    left.textContent = price ? 'VALUE  ' + price : 'QUICK ACTIONS';
     if (quantity) left.textContent += '  ·  QTY ' + quantity;
     strip.appendChild(left);
     var actions = el('span','gi-quick');
     var native = nativeActions(row);
     if (native.length) {
       native.forEach(function(control) {
-        var text = label(control).replace(/\s+this item\b/i,'').trim();
-        text = text.split(' ').slice(0, 2).join(' ').toUpperCase();
+        var text = actionVerb(control);
         actions.appendChild(button(text, function() {
           if (!control.isConnected) return;
           control.click();
@@ -141,13 +147,13 @@
   }
   function css() {
     var style = el('style');
-    style.id = 'gi-css-031';
+    style.id = 'gi-css-032';
     style.textContent = `
       #gi-toolbar {display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:relative;z-index:10;margin:8px 0;padding:8px 10px;border:1px solid rgba(155,107,255,.4);border-radius:10px;background:#0c0e19;color:#d7dbe8;font:11px Inter,system-ui,sans-serif}
       #gi-toolbar strong{letter-spacing:.12em;font-size:11px;flex:1;min-width:110px}
       #gi-toolbar #gi-count{color:#4fe0d0;font:10px monospace}
       #gi-toolbar button{background:#19182a;color:#d7dbe8;border:1px solid #494067;border-radius:7px;padding:6px 9px;font:10px system-ui}
-      .gi-row {position:relative!important;box-sizing:border-box!important;min-height:0!important;height:auto!important;overflow:visible!important;margin:3px 0!important;border:1px solid rgba(130,140,255,.23)!important;border-left:3px solid #4fe0d0!important;border-radius:9px!important;background:linear-gradient(110deg,#101420,#161321)!important;box-shadow:0 2px 9px #0003!important;color:#d7dbe8!important}
+      .gi-row {position:relative!important;box-sizing:border-box!important;min-height:0!important;height:auto!important;overflow:visible!important;margin:3px 0!important;border:1px solid rgba(130,140,255,.23)!important;border-left:1px solid rgba(130,140,255,.23)!important;border-radius:9px!important;background:linear-gradient(110deg,#10121d,#161321)!important;box-shadow:0 2px 9px #0003!important;color:#d7dbe8!important}
       .gi-row > :not(.gi-secondary) {box-sizing:border-box}
       .gi-row > .gi-secondary {clear:both!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:7px!important;flex-wrap:nowrap!important;width:100%!important;min-height:31px!important;padding:5px 9px!important;margin:0!important;border-top:1px solid rgba(130,140,255,.2)!important;background:rgba(5,6,12,.65)!important;color:#aeb3c8!important;font:10px Inter,system-ui,sans-serif!important;box-sizing:border-box!important}
       .gi-row .gi-meta{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.04em;color:#4fe0d0}
