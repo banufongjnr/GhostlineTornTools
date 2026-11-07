@@ -1,20 +1,23 @@
 // ==UserScript==
 // @name         Ghostline Inventory
 // @namespace    ghostline.torntools.inventory
-// @version      0.1.0
+// @version      0.1.1
 // @description  Ghostline-themed Torn inventory overlay with search, filtering, inspection and native item actions.
 // @author       FatherOooogaboo [3269781]
-// @match        https://www.torn.com/item.php*
-// @grant        GM_getValue
-// @grant        GM_setValue
+// @match        https://www.torn.com/*
+// @match        https://torn.com/*
+// @grant        none
 // @run-at       document-end
 // ==/UserScript==
 
 (function () {
   'use strict';
+  if (!/\/(item\.php)(?:$|[?#])/i.test(location.pathname + location.search + location.hash)) return;
+  if (!document.body || !document.head) { setTimeout(() => { window.__ghostlineInventoryPending = false; }, 500); return; }
   if (window.__ghostlineInventory) return;
   window.__ghostlineInventory = true;
   const C = { bg:'#05060c', teal:'#4fe0d0', vio:'#9b6bff', muted:'#7d8399' };
+  console.info('[Ghostline Inventory] v0.1.1 initialized',location.href);
   const css = `
     #gi-tab,#gi-root{font-family:Inter,"Space Grotesk",system-ui,sans-serif;box-sizing:border-box;color:#d7dbe8}
     #gi-root *{box-sizing:border-box}
@@ -168,5 +171,6 @@
   function openOverlay(){open=true;root.classList.add('gi-open');document.documentElement.style.overflow='hidden';scan();render()}
   function close(){open=false;root.classList.remove('gi-open');document.documentElement.style.overflow=''}
   tab.addEventListener('click',openOverlay);
+  tab.title='Ghostline Inventory v0.1.1';
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&open)close()});
 })();
