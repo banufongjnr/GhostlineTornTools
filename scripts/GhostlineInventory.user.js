@@ -1,23 +1,27 @@
 // ==UserScript==
 // @name         Ghostline Inventory
 // @namespace    ghostline.torntools.inventory
-// @version      0.1.1
+// @version      0.1.2
 // @description  Ghostline-themed Torn inventory overlay with search, filtering, inspection and native item actions.
 // @author       FatherOooogaboo [3269781]
 // @match        https://www.torn.com/*
 // @match        https://torn.com/*
 // @grant        none
-// @run-at       document-end
+// @run-at       document-idle
 // ==/UserScript==
 
 (function () {
   'use strict';
-  if (!/\/(item\.php)(?:$|[?#])/i.test(location.pathname + location.search + location.hash)) return;
-  if (!document.body || !document.head) { setTimeout(() => { window.__ghostlineInventoryPending = false; }, 500); return; }
+  // v0.1.2: initialise after the DOM is ready; avoid fragile URL checks.
   if (window.__ghostlineInventory) return;
   window.__ghostlineInventory = true;
+  function startWhenReady() {
+    if (!document.body || !document.head) { setTimeout(startWhenReady, 250); return; }
+    start();
+  }
+  function start() {
   const C = { bg:'#05060c', teal:'#4fe0d0', vio:'#9b6bff', muted:'#7d8399' };
-  console.info('[Ghostline Inventory] v0.1.1 initialized',location.href);
+  console.info('[Ghostline Inventory] v0.1.2 injected',location.href);
   const css = `
     #gi-tab,#gi-root{font-family:Inter,"Space Grotesk",system-ui,sans-serif;box-sizing:border-box;color:#d7dbe8}
     #gi-root *{box-sizing:border-box}
@@ -171,6 +175,15 @@
   function openOverlay(){open=true;root.classList.add('gi-open');document.documentElement.style.overflow='hidden';scan();render()}
   function close(){open=false;root.classList.remove('gi-open');document.documentElement.style.overflow=''}
   tab.addEventListener('click',openOverlay);
-  tab.title='Ghostline Inventory v0.1.1';
+  tab.title='Ghostline Inventory v0.1.2';
+  const badge=el('div','','GI 0.1.2 ACTIVE');
+  badge.id='gi-injection-check';
+  badge.style.cssText='position:fixed;top:calc(env(safe-area-inset-top) + 8px);left:8px;z-index:2147483646;background:#4fe0d0;color:#05060c;padding:6px 10px;border-radius:9px;font:700 11px system-ui;box-shadow:0 2px 16px #0008;cursor:pointer';
+  badge.title='Ghostline Inventory injection confirmed — tap to open';
+  badge.addEventListener('click',openOverlay);
+  document.body.appendChild(badge);
+  console.info('[Ghostline Inventory] injection badge mounted');
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&open)close()});
+  }
+  startWhenReady();
 })();
