@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ghostline Inventory
 // @namespace    ghostline.torntools.inventory
-// @version      0.3.3
+// @version      0.3.4
 // @description  Compact in-place Torn inventory styling with a secondary Ghostline quick-info row.
 // @author       FatherOooogaboo [3269781]
 // @match        https://www.torn.com/item.php*
@@ -12,8 +12,8 @@
 
 (function () {
   'use strict';
-  if (window.__ghostlineInventory033) return;
-  window.__ghostlineInventory033 = true;
+  if (window.__ghostlineInventory034) return;
+  window.__ghostlineInventory034 = true;
   var enabled = true, scheduled = false, observing = false;
   var obs, currentRoot = null;
   function el(tag, cls, text) {
@@ -159,9 +159,20 @@
   function scan() {
     if (!enabled) return;
     var root = getRoot();
-    if (!root) return;
+    if (!root) {
+      var counter=document.getElementById('gi-count');
+      if(counter)counter.textContent='WAITING FOR ITEMS';
+      return;
+    }
     currentRoot = root;
-    rows(root).forEach(enhance);
+    var bar=document.getElementById('gi-toolbar');
+    if(bar && bar.parentElement!==root.parentElement && root.parentElement) {
+      bar.style.cssText='';
+      root.parentElement.insertBefore(bar,root);
+    }
+    rows(root).forEach(function(row){
+      try { enhance(row); } catch(e) { console.warn('[Ghostline Inventory] row skipped',e); }
+    });
     var counter = document.getElementById('gi-count');
     if (counter) counter.textContent = rows(root).filter(function(n){return n.classList.contains('gi-row');}).length + ' ROWS';
   }
@@ -172,7 +183,7 @@
   }
   function css() {
     var style = el('style');
-    style.id = 'gi-css-033';
+    style.id = 'gi-css-034';
     style.textContent = `
       #gi-toolbar {display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:relative;z-index:10;margin:8px 0;padding:8px 10px;border:1px solid rgba(155,107,255,.4);border-radius:10px;background:#0c0e19;color:#d7dbe8;font:11px Inter,system-ui,sans-serif}
       #gi-toolbar strong{letter-spacing:.12em;font-size:11px;flex:1;min-width:110px}
@@ -203,14 +214,25 @@
       else { toggle.textContent='ENABLE GHOSTLINE';restore();count.textContent='OFF'; }
     });
     bar.appendChild(toggle);
+    // Attach near inventory when available; never rely on a single early DOM scan.
     var root = getRoot();
     if (root && root.parentElement) root.parentElement.insertBefore(bar,root);
-    else document.body.appendChild(bar);
+    else {
+      bar.style.cssText='position:fixed!important;top:70px!important;left:8px!important;right:8px!important;z-index:2147483645!important;';
+      document.body.appendChild(bar);
+    }
   }
   function init() {
     if (!document.body || !document.head) { setTimeout(init,300);return; }
     if (document.getElementById('gi-toolbar')) return;
-    css();toolbar();scan();
+    try { css();toolbar();scan(); }
+    catch(e) {
+      console.error('[Ghostline Inventory] startup error',e);
+      var fail=el('div','','GHOSTLINE 0.3.4 STARTUP ERROR: '+e.message);
+      fail.style.cssText='position:fixed;top:70px;left:8px;right:8px;z-index:2147483647;background:#4fe0d0;color:#05060c;padding:12px;font:bold 12px system-ui';
+      document.body.appendChild(fail);
+      return;
+    }
     obs = new MutationObserver(function(records) {
       if (!enabled) return;
       var changed = records.some(function(r) {
@@ -219,7 +241,10 @@
       if (changed) schedule();
     });
     obs.observe(document.body,{childList:true,subtree:true});
-    setInterval(function(){if(enabled)scan();},6000);
+    setInterval(function(){
+      if(!document.getElementById('gi-toolbar')) toolbar();
+      if(enabled)scan();
+    },2500);
   }
   if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
   else init();
